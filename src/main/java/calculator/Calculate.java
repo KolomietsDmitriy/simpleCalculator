@@ -2,70 +2,89 @@ package calculator;
 
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
-import static calculator.TypeElement.*;
+import static calculator.TypeElement.NUMBERS;
 
 public class Calculate {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(Calculate.class);
 
-    private List<ElementOfString> elementOfStringList = new ArrayList<>();
+    private static final List<ElementOfString> elementOfStringList = new ArrayList<>();
+
+    static Map<String, Integer> priorityOperation = new HashMap<>();
+
+    static {
+        priorityOperation.put("+", 2);
+        priorityOperation.put("-", 2);
+        priorityOperation.put("*", 1);
+        priorityOperation.put("/", 1);
+    }
 
     public static void main(String[] args) {
-        var calculator = new Calculate();
         var scanner = new Scanner(System.in);
 
         while (scanner.hasNext()) {
             String s = scanner.nextLine().replace(" ", "");
+            String result = calc(s);
 
-            log.info("Ответ: {}", calculator.calc(s));
+            log.info("Ответ: {}", result);
         }
     }
 
-    public String calc(String inString) {
+    public static String calc(String inString) {
         parseString(inString.replace(" ", ""));
-        return elementOfStringList.toString();
+
+        return calculateExpression(elementOfStringList);
     }
 
-    public void parseString(String expression) {
-        Character symbol;
-        var digit = new StringBuilder();
-        ElementOfString element = null;
-        ElementOfString number;
-        boolean toList;
-        int indexElement = 0;
+    public static void parseString(String expression) {
+        var iterator = new StringIterator(expression);
 
-
-        for (int i = 0; i<expression.length(); i++) {
-            symbol = expression.charAt(i);
-
-            if (Character.isDigit(symbol) || symbol == '.' || (i == 0 && symbol == '-')) {
-                toList = false;
-                digit.append(symbol);
-            } else {
-                toList = true;
-                indexElement++;
-                element = switch (symbol) {
-                    case '+', '-', '*', '/' -> new ElementOfString(indexElement, symbol.toString(), OPERATORS);
-                    case '(' -> new ElementOfString(indexElement, symbol.toString(), OPEN_BRACKET);
-                    case ')' -> new ElementOfString(indexElement, symbol.toString(), CLOSE_BRACKET);
-                    default -> throw new IllegalStateException("Unexpected value: " + symbol);
-                };
-            }
-
-            if (toList) {
-                if (!digit.isEmpty()) {
-                    number = new ElementOfString(indexElement - 1, digit.toString(), NUMBERS);
-                    elementOfStringList.add(number);
-                }
-                elementOfStringList.add(element);
-                digit.delete(0, digit.length());
-            }
-
+        while (iterator.hasNext()) {
+            elementOfStringList.add(iterator.next());
         }
+    }
+
+    public static String calculateExpression(List<ElementOfString> elementList) {
+        String result = null;
+        var index = 0;
+        String firstNumber;
+        String operator;
+        String secondNumber;
+        List<ElementOfString> secondElementList = new ArrayList<>();
+
+        while (elementList.size() != 1) {
+            firstNumber = elementList.get(index).getValue();
+            operator = elementList.get(++index).getValue();
+            secondNumber = elementList.get(++index).getValue();
+
+            if (elementList.size() > 3 &&
+                    (priorityOperation.get(elementList.get(++index).getValue()) < priorityOperation.get(operator))) {
+                secondElementList.add(elementList.get(--index));
+                elementList.remove(index);
+                secondElementList.add(elementList.get(index));
+                elementList.remove(index);
+                secondElementList.add(elementList.get(index));
+                elementList.remove(index);
+                elementList.add(index, new ElementOfString(calculateExpression(secondElementList), NUMBERS));
+                secondNumber = elementList.get(index).getValue();
+            }
+
+
+            result = String.valueOf(switch (operator) {
+                case "+" -> Double.parseDouble(firstNumber) + Double.parseDouble(secondNumber);
+                case "-" -> Double.parseDouble(firstNumber) - Double.parseDouble(secondNumber);
+                case "*" -> Double.parseDouble(firstNumber) * Double.parseDouble(secondNumber);
+                case "/" -> Double.parseDouble(firstNumber) / Double.parseDouble(secondNumber);
+                default -> throw new IllegalStateException("Unexpected operator: " + operator);
+            });
+
+            elementList.clear();
+            elementList.add(0, new ElementOfString(result, NUMBERS));
+        }
+
+        return result;
     }
 
 

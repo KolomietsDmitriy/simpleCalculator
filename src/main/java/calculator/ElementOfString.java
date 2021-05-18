@@ -6,11 +6,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ElementOfString {
-    private int id;
-    private String value;
-    private TypeElement typeElement;
-
-    public ElementOfString() {
-
-    }
+    private final String value;
+    private final TypeElement typeElement;
 }
