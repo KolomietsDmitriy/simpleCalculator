@@ -55,11 +55,15 @@ public class Calculate {
         List<ElementOfString> secondElementList = new ArrayList<>();
 
         while (elementList.size() != 1) {
+//            if (elementList.get(index).getTypeElement() == OPEN_BRACKET) {
+//                calcExpressionInBracket(elementList, index);
+//            }
             firstNumber = elementList.get(index).getValue();
+
             operator = elementList.get(++index).getValue();
             secondNumber = elementList.get(++index).getValue();
 
-            if (elementList.size() > 3 &&
+            while (elementList.size() > 3 &&
                     (priorityOperation.get(elementList.get(++index).getValue()) < priorityOperation.get(operator))) {
                 secondElementList.add(elementList.get(--index));
                 elementList.remove(index);
@@ -68,6 +72,7 @@ public class Calculate {
                 secondElementList.add(elementList.get(index));
                 elementList.remove(index);
                 elementList.add(index, new ElementOfString(calculateExpression(secondElementList), NUMBERS));
+                secondElementList.clear();
                 secondNumber = elementList.get(index).getValue();
             }
 
@@ -86,6 +91,10 @@ public class Calculate {
 
         return result;
     }
+
+//    private static void calcExpressionInBracket(List<ElementOfString> elementList, int index) {
+//
+//    }
 
 
 }
