@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 
 import java.util.*;
 
-import static calculator.TypeElement.NUMBERS;
+import static calculator.TypeElement.*;
 
 public class Calculate {
 
@@ -41,6 +41,8 @@ public class Calculate {
     public static void parseString(String expression) {
         var iterator = new StringIterator(expression);
 
+        elementOfStringList.clear();
+
         while (iterator.hasNext()) {
             elementOfStringList.add(iterator.next());
         }
@@ -55,27 +57,43 @@ public class Calculate {
         List<ElementOfString> secondElementList = new ArrayList<>();
 
         while (elementList.size() != 1) {
-//            if (elementList.get(index).getTypeElement() == OPEN_BRACKET) {
-//                calcExpressionInBracket(elementList, index);
-//            }
+            if (elementList.get(index).getTypeElement() == OPEN_BRACKET) {
+                elementList.remove(index);
+                calcExpressionInBracket(elementList, index);
+            }
             firstNumber = elementList.get(index).getValue();
+            elementList.remove(index);
 
-            operator = elementList.get(++index).getValue();
-            secondNumber = elementList.get(++index).getValue();
-
-            while (elementList.size() > 3 &&
-                    (priorityOperation.get(elementList.get(++index).getValue()) < priorityOperation.get(operator))) {
-                secondElementList.add(elementList.get(--index));
-                elementList.remove(index);
-                secondElementList.add(elementList.get(index));
-                elementList.remove(index);
-                secondElementList.add(elementList.get(index));
-                elementList.remove(index);
-                elementList.add(index, new ElementOfString(calculateExpression(secondElementList), NUMBERS));
-                secondElementList.clear();
-                secondNumber = elementList.get(index).getValue();
+            if (elementList.size() == 0) {
+                //выражение в двойных скобках было
+                elementList.add(0, new ElementOfString(firstNumber, NUMBERS));
+                return firstNumber;
             }
 
+            operator = elementList.get(index).getValue();
+            elementList.remove(index);
+
+            if (elementList.get(index).getTypeElement() == OPEN_BRACKET) {
+                elementList.remove(index);
+                calcExpressionInBracket(elementList, index);
+            }
+            secondNumber = elementList.get(index).getValue();
+            elementList.remove(index);
+
+            while (elementList.size() > 0 &&
+                    (priorityOperation.get(elementList.get(index).getValue()) < priorityOperation.get(operator))) {
+//                secondElementList.add(elementList.get(index));
+//                elementList.remove(index);
+                secondElementList.add(new ElementOfString(secondNumber, NUMBERS));
+                secondElementList.add(elementList.get(index));
+                elementList.remove(index);
+                secondElementList.add(elementList.get(index));
+                elementList.remove(index);
+                //elementList.add(index, new ElementOfString(calculateExpression(secondElementList), NUMBERS));
+                secondNumber = calculateExpression(secondElementList);
+                secondElementList.clear();
+                //secondNumber = elementList.get(index).getValue();
+            }
 
             result = String.valueOf(switch (operator) {
                 case "+" -> Double.parseDouble(firstNumber) + Double.parseDouble(secondNumber);
@@ -85,16 +103,35 @@ public class Calculate {
                 default -> throw new IllegalStateException("Unexpected operator: " + operator);
             });
 
-            elementList.clear();
+//            elementList.
             elementList.add(0, new ElementOfString(result, NUMBERS));
         }
 
         return result;
     }
 
-//    private static void calcExpressionInBracket(List<ElementOfString> elementList, int index) {
-//
-//    }
+    private static void calcExpressionInBracket(List<ElementOfString> elementList, int index) {
+        int countBracket = 1;
+        int localIndex = index;
+        List<ElementOfString> elementListInBracket = new ArrayList<>();
+
+        while (countBracket != 0) {
+
+            if (elementList.get(localIndex).getTypeElement() == OPEN_BRACKET) {
+                countBracket++;
+            } else if (elementList.get(localIndex).getTypeElement() == CLOSE_BRACKET) {
+                countBracket--;
+            }
+            if (countBracket != 0) {
+                elementListInBracket.add(
+                        new ElementOfString(elementList.get(localIndex).getValue(),
+                                elementList.get(localIndex).getTypeElement()));
+            }
+
+            elementList.remove(localIndex);
+        }
+        elementList.add(localIndex, new ElementOfString(calculateExpression(elementListInBracket), NUMBERS));
+    }
 
 
 }

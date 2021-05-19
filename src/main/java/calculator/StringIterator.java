@@ -25,7 +25,10 @@ public class StringIterator implements Iterator<ElementOfString> {
         Character symbol = expression.charAt(index);
         var digit = new StringBuilder();
 
-        while ((Character.isDigit(symbol) || symbol == '.' || (index == 0 && symbol == '-'))
+        while ((Character.isDigit(symbol) ||
+                symbol == '.' ||
+                (index == 0 && symbol == '-') ||
+                (index > 0 && expression.charAt(index - 1) == '(' && symbol == '-'))
                 && index < expression.length()) {
             digit.append(symbol);
             index++;
